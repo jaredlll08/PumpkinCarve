@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "colour=0": {
+      "model": "pumpkincarve:pixel"
+    },
+    "colour=1": {
+      "model": "pumpkincarve:pixel"
+    }
+  }
+}
+
+

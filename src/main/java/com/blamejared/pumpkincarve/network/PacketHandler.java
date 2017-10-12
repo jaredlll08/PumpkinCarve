@@ -11,7 +11,9 @@ public class PacketHandler {
     public static int ID = 0;
     
     public static void preInit() {
-        INSTANCE.registerMessage(MessagePumpkinSync.class, MessagePumpkinSync.class, ID++, Side.SERVER);
+        INSTANCE.registerMessage(MessagePumpkinSyncServer.class, MessagePumpkinSyncServer.class, ID++, Side.SERVER);
+        INSTANCE.registerMessage(MessagePumpkinSyncClient.class, MessagePumpkinSyncClient.class, ID++, Side.CLIENT);
+    
     }
     
 }

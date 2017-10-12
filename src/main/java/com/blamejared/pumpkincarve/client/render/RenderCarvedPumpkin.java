@@ -31,31 +31,25 @@ public class RenderCarvedPumpkin extends TileEntitySpecialRenderer<TileEntityPum
         GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
         GL11.glTranslatef((float) x + 0.5f, (float) y + 1f, (float) z + 0.5f);
         GL11.glRotatef(180f, 1f, 0f, 0f);
-        boolean[][] renders = new boolean[16][16];
         
         for(int px = 0; px < tile.pixelMap.length; px++) {
             for(int py = 0; py < tile.pixelMap[px].length; py++) {
-                if(!renders[px][py]) {
-                    int color = tile.pixelMap[px][py];
-                    float a = (float) (color >> 24 & 255) / 255.0F;
-                    float r = (float) (color >> 16 & 255) / 255.0F;
-                    float g = (float) (color >> 8 & 255) / 255.0F;
-                    float b = (float) (color & 255) / 255.0F;
-                    double xOff = px * 0.0625;
-                    double yOff = py * 0.0625;
-                    int blockColour = 0;
-                    switch(color){
-                        case 0xFF441300:
-                            blockColour = 0;
-                            break;
-                        case 0xFF2d0003:
-                            blockColour = 1;
-                            break;
-                    }
-                    if(a != 0)
-                        renderBlockModel(tile.getWorld(), BlockPos.ORIGIN, PCBlocks.PIXEL.getDefaultState().withProperty(BlockPixel.COLOUR, blockColour), true, -0.5 - 0.0001 + xOff, -1 + yOff, -0.5 - 0.0001);
-//                        drawRect(-0.5 - 0.0001 + xOff, 0 + yOff, -0.5 - 0.0001, 0.0625, 0.0625, r, g, b, a, 16);
+                int color = tile.pixelMap[px][py];
+                float a = (float) (color >> 24 & 255) / 255.0F;
+                double xOff = px * 0.0625;
+                double yOff = py * 0.0625;
+                int blockColour = 0;
+                switch(color) {
+                    case 0xFF441300:
+                        blockColour = 0;
+                        break;
+                    case 0xFF2d0003:
+                        blockColour = 1;
+                        break;
                 }
+                if(a != 0)
+                    renderBlockModel(tile.getWorld(), BlockPos.ORIGIN, PCBlocks.PIXEL.getDefaultState().withProperty(BlockPixel.COLOUR, blockColour), true, -0.5 - 0.0001 + xOff, -1 + yOff, -0.5 - 0.0001);
+                //                        drawRect(-0.5 - 0.0001 + xOff, 0 + yOff, -0.5 - 0.0001, 0.0625, 0.0625, r, g, b, a, 16);
             }
         }
         GL11.glPopAttrib();
@@ -65,12 +59,12 @@ public class RenderCarvedPumpkin extends TileEntitySpecialRenderer<TileEntityPum
     
     
     public static void renderBlockModel(World world, BlockPos pos, IBlockState state, boolean translateToOrigin, double xOff, double yOff, double zOff) {
-        
+    
         Minecraft.getMinecraft().renderEngine.bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
         BufferBuilder wr = Tessellator.getInstance().getBuffer();
         wr.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
         if(translateToOrigin) {
-            wr.setTranslation(-pos.getX()+xOff, -pos.getY()+yOff+0.0625, -pos.getZ()-(0.0625/2)+zOff);
+            wr.setTranslation(-pos.getX() + xOff, -pos.getY() + yOff + 0.0625, -pos.getZ() - (0.0625 / 2) + zOff);
         }
         BlockRendererDispatcher blockrendererdispatcher = Minecraft.getMinecraft().getBlockRendererDispatcher();
         BlockModelShapes modelShapes = blockrendererdispatcher.getBlockModelShapes();

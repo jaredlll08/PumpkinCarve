@@ -14,7 +14,8 @@ import org.lwjgl.opengl.GL11;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
+
+import static com.blamejared.pumpkincarve.tileentity.TileEntityPumpkin.genArray;
 
 public class GuiCarving extends GuiScreen {
     
@@ -30,9 +31,11 @@ public class GuiCarving extends GuiScreen {
     
     public final int gridSize = 8;
     private TileEntityPumpkin tile;
+    public int[][] pixelMap = genArray();
     
     public GuiCarving(TileEntityPumpkin tile) {
         this.tile = tile;
+        pixelMap = tile.pixelMap;
     }
     
     public boolean showGrid = true;
@@ -86,11 +89,11 @@ public class GuiCarving extends GuiScreen {
         GlStateManager.popAttrib();
         super.drawScreen(mouseX, mouseY, partialTicks);
         mc.fontRenderer.drawString("           " + mouseX + ":" + mouseY + " (" + ((mouseX - minX) / gridSize) + ":" + ((mouseY - minY) / gridSize) + ")", mouseX, mouseY, 0, false);
-        for(int x = 0; x < tile.pixelMap.length; x++) {
-            for(int y = 0; y < tile.pixelMap[x].length; y++) {
+        for(int x = 0; x < pixelMap.length; x++) {
+            for(int y = 0; y < pixelMap[x].length; y++) {
                 int left = minX + x * gridSize;
                 int top = minY + y * gridSize;
-                drawRect(left, top, left + gridSize, top + gridSize, tile.pixelMap[x][y]);
+                drawRect(left, top, left + gridSize, top + gridSize, pixelMap[x][y]);
             }
         }
         if(showGrid) {
@@ -116,13 +119,15 @@ public class GuiCarving extends GuiScreen {
             int x = (mx - minX) / gridSize;
             int y = (my - minY) / gridSize;
             Action act = new Action(this, x, y, mouseButton);
-            act.apply(tile.pixelMap);
+            act.apply(pixelMap);
             actionsUndo.add(act);
             if(mouseButton != 0) {
                 actionsUndo.clear();
             }
             actionsRedo.clear();
-            PacketHandler.INSTANCE.sendToServer(new MessagePumpkinSync(tile.getPos(), tile.pixelMap));
+            tile.pixelMap = pixelMap;
+            PacketHandler.INSTANCE.sendToServer(new MessagePumpkinSyncServer(tile.getPos(), pixelMap));
+//            tile.markDirty();
         }
     }
     
@@ -141,20 +146,24 @@ public class GuiCarving extends GuiScreen {
             if(Keyboard.isKeyDown(Keyboard.KEY_Z)) {
                 if(!actionsUndo.isEmpty()) {
                     Action action = actionsUndo.get(actionsUndo.size() - 1);
-                    action.undo(tile.pixelMap);
+                    action.undo(pixelMap);
                     actionsUndo.remove(action);
                     actionsRedo.add(action);
                     undoTime = undoTimeDefault;
-                    PacketHandler.INSTANCE.sendToServer(new MessagePumpkinSync(tile.getPos(), tile.pixelMap));
+                    tile.pixelMap = pixelMap;
+                    PacketHandler.INSTANCE.sendToServer(new MessagePumpkinSyncServer(tile.getPos(), pixelMap));
+//                    tile.markDirty();
                 }
             } else if(Keyboard.isKeyDown(Keyboard.KEY_Y)) {
                 if(!actionsRedo.isEmpty()) {
                     Action action = actionsRedo.get(actionsRedo.size() - 1);
-                    action.apply(tile.pixelMap);
+                    action.apply(pixelMap);
                     actionsRedo.remove(action);
                     actionsUndo.add(action);
                     undoTime = undoTimeDefault;
-                    PacketHandler.INSTANCE.sendToServer(new MessagePumpkinSync(tile.getPos(), tile.pixelMap));
+                    tile.pixelMap = pixelMap;
+                    PacketHandler.INSTANCE.sendToServer(new MessagePumpkinSyncServer(tile.getPos(), pixelMap));
+//                    tile.markDirty();
                 }
             }
         }
@@ -163,6 +172,7 @@ public class GuiCarving extends GuiScreen {
     @Override
     public void onGuiClosed() {
         super.onGuiClosed();
+        PacketHandler.INSTANCE.sendToServer(new MessagePumpkinSyncServer(tile.getPos(), pixelMap));
     }
     
     @Override

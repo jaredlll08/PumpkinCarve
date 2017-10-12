@@ -5,18 +5,19 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.*;
 
-public class MessagePumpkinSync implements IMessage, IMessageHandler<MessagePumpkinSync, IMessage> {
+public class MessagePumpkinSyncServer implements IMessage, IMessageHandler<MessagePumpkinSyncServer, IMessage> {
     
     
     public int[][] pixelMap;
     public BlockPos pos;
     
-    public MessagePumpkinSync() {
+    public MessagePumpkinSyncServer() {
     }
     
-    public MessagePumpkinSync(BlockPos pos, int[][] pixelMap) {
+    public MessagePumpkinSyncServer(BlockPos pos, int[][] pixelMap) {
         this.pos = pos;
         this.pixelMap = pixelMap;
     }
@@ -27,7 +28,11 @@ public class MessagePumpkinSync implements IMessage, IMessageHandler<MessagePump
         pixelMap = TileEntityPumpkin.genArray();
         for(int x = 0; x < 16; x++) {
             for(int y = 0; y < 16; y++) {
-                pixelMap[x][y] = buf.readInt();
+                int i = buf.readInt();
+                if(i == 0) {
+                    i = 0xFFFFFF;
+                }
+                pixelMap[x][y] = i;
             }
         }
     }
@@ -43,18 +48,13 @@ public class MessagePumpkinSync implements IMessage, IMessageHandler<MessagePump
     }
     
     @Override
-    public IMessage onMessage(MessagePumpkinSync message, MessageContext ctx) {
+    public IMessage onMessage(MessagePumpkinSyncServer message, MessageContext ctx) {
         TileEntity tileEntity = FMLCommonHandler.instance().getMinecraftServerInstance().getEntityWorld().getTileEntity(message.pos);
         if(tileEntity instanceof TileEntityPumpkin) {
             TileEntityPumpkin tile = (TileEntityPumpkin) tileEntity;
-            tile.pixelMap = TileEntityPumpkin.genArray();
-            for(int x = 0; x < 16; x++) {
-                for(int y = 0; y < 16; y++) {
-                    if(message.pixelMap[x][y] != 0)
-                        tile.pixelMap[x][y] = message.pixelMap[x][y];
-                }
-            }
-            
+            tile.pixelMap = message.pixelMap;
+            tile.markDirty();
+            PacketHandler.INSTANCE.sendToAllAround(new MessagePumpkinSyncClient(message.pos, message.pixelMap), new NetworkRegistry.TargetPoint(tile.getWorld().provider.getDimension(), tile.getPos().getX(), tile.getPos().getY(), tile.getPos().getZ(), 128D));
         }
         return null;
     }

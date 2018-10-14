@@ -51,7 +51,6 @@ public class GuiObjectColour extends GuiObject {
         float[] rgba = parent.getRGBA(colour);
         boolean primary = parent.colour == this.colour;
         boolean secondary = parent.colourSec == this.colour;
-        
         GlStateManager.disableTexture2D();
         b.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         float startX = getX();

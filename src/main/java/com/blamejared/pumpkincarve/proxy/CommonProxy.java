@@ -9,4 +9,7 @@ public class CommonProxy {
     public void openCarvingGUI(TileEntityPumpkin tile) {
     
     }
+    public void registerRender(){
+    
+    }
 }

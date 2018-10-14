@@ -61,6 +61,7 @@ public class GuiCarve extends GuiScreen {
         objects.add(new GuiObjectPaint(this, guiLeft - 50, guiTop + 5, 10, 10));
         colour = 0xFF441300;
         colourSec = 0xFF2d0003;
+        
         currentMode = EnumMode.PAINT;
         int countX = 0;
         int countY = 0;
@@ -71,16 +72,18 @@ public class GuiCarve extends GuiScreen {
                 countY++;
             }
         }
-        objects.add(new GuiObjectColour(this, guiLeft - 95 + (countX * 15), guiTop + 20 + (countY * 15), 10, 10, "Inner Pumpkin", 0xFF441300));
+        objects.add(new GuiObjectColour(this, guiLeft - 95 + (countX * 15), guiTop + 20 + (countY * 15), 10, 10, "Inner Pumpkin", colour));
         if(countX++ > 4) {
             countX = 0;
             countY++;
         }
-        objects.add(new GuiObjectColour(this, guiLeft - 95 + (countX * 15), guiTop + 20 + (countY * 15), 10, 10, "Inner Pumpkin Edge", 0xFF2d0003));
+        objects.add(new GuiObjectColour(this, guiLeft - 95 + (countX * 15), guiTop + 20 + (countY * 15), 10, 10, "Inner Pumpkin Edge", colourSec));
         if(countX++ > 4) {
             countX = 0;
             countY++;
         }
+        colour += ((0xFF) << 24);
+        colourSec += ((0xFF) << 24);
     }
     
     @Override
@@ -141,6 +144,25 @@ public class GuiCarve extends GuiScreen {
             Tessellator.getInstance().draw();
         }
         
+        float borderXStart = guiLeft;
+        float borderXEnd = 0;
+        float borderYStart = guiTop;
+        float borderYEnd = 0;
+        for(GuiObject object : objects) {
+            borderXStart = Math.min(object.getX(), borderXStart);
+            borderXEnd = Math.max(object.getX2(), borderXEnd);
+            borderYStart = Math.min(object.getY(), borderYStart);
+            borderYEnd = Math.max(object.getY2(), borderYEnd);
+        }
+        GlStateManager.disableTexture2D();
+        b.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        b.pos(borderXStart - 5, borderYEnd + 5, 0).color(0.2f, 0.2f, 0.2f, 1).endVertex();
+        b.pos(borderXEnd + 5, borderYEnd + 5, 0).color(0.2f, 0.2f, 0.2f, 1).endVertex();
+        b.pos(borderXEnd + 5, borderYStart - 5, 0).color(0.2f, 0.2f, 0.2f, 1).endVertex();
+        b.pos(borderXStart - 5, borderYStart - 5, 0).color(0.2f, 0.2f, 0.2f, 1).endVertex();
+        Tessellator.getInstance().draw();
+        
+        GlStateManager.enableTexture2D();
         objects.forEach(guiObject -> guiObject.draw(this.guiLeft, this.guiTop, mouseX, mouseY, partialTicks));
         objects.forEach(guiObject -> guiObject.drawText(this.guiLeft, this.guiTop, mouseX, mouseY, partialTicks));
         
@@ -148,23 +170,23 @@ public class GuiCarve extends GuiScreen {
         GlStateManager.popMatrix();
     }
     
-    public float getRed(int hex) {
+    public static float getRed(int hex) {
         return ((hex >> 16) & 0xFF) / 255f;
     }
     
-    public float getGreen(int hex) {
+    public static float getGreen(int hex) {
         return ((hex >> 8) & 0xFF) / 255f;
     }
     
-    public float getBlue(int hex) {
+    public static float getBlue(int hex) {
         return ((hex) & 0xFF) / 255f;
     }
     
-    public float getAlpha(int hex) {
+    public static float getAlpha(int hex) {
         return ((hex >> 24) & 0xff) / 255f;
     }
     
-    public float[] getRGBA(int hex) {
+    public static float[] getRGBA(int hex) {
         return new float[]{getRed(hex), getGreen(hex), getBlue(hex), getAlpha(hex)};
     }
     
@@ -176,9 +198,6 @@ public class GuiCarve extends GuiScreen {
     @Override
     protected void mouseClicked(int mx, int my, int mouseButton) throws IOException {
         super.mouseClicked(mx, my, mouseButton);
-        if(mouseButton == 2) {
-            tile.clearGrid();
-        }
         boolean valid = true;
         
         for(final GuiObject object : this.objects) {
@@ -202,6 +221,26 @@ public class GuiCarve extends GuiScreen {
                     IBlockState state = tile.getWorld().getBlockState(tile.getPos());
                     tile.getWorld().notifyBlockUpdate(tile.getPos(), state, state, 8);
                 }
+            }
+        }
+    }
+    
+    
+    @Override
+    protected void mouseClickMove(int mx, int my, int mouseButton, long timeSinceLastClick) {
+        super.mouseClickMove(mx, my, mouseButton, timeSinceLastClick);
+        if(mx > guiLeft && mx < guiLeft + xSize) {
+            if(my > guiTop && my < guiTop + ySize) {
+                int normalX = (int) Math.floor(((mx - guiLeft + 0f) / gridSize));
+                int normalY = (int) Math.floor(((my - guiTop + 0f) / gridSize));
+                int setColour = mouseButton == 0 ? colour : colourSec;
+                if(currentMode == EnumMode.ERASE) {
+                    setColour = 0;
+                }
+                tile.setPixel(normalX, normalY, setColour);
+                PacketHandler.INSTANCE.sendToServer(new MessageSetPx(tile.getPos(), normalX, normalY, setColour));
+                IBlockState state = tile.getWorld().getBlockState(tile.getPos());
+                tile.getWorld().notifyBlockUpdate(tile.getPos(), state, state, 8);
             }
         }
     }

@@ -20,6 +20,7 @@ public class PumpkinCarve {
         MinecraftForge.EVENT_BUS.register(new PCBlocks());
         MinecraftForge.EVENT_BUS.register(new CommonEventHandler());
         PacketHandler.init();
+        PROXY.registerRender();
     }
     
     @Mod.EventHandler
